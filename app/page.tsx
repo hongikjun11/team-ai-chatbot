@@ -3,6 +3,7 @@ import { useState } from 'react'
 import PasswordGate from '@/components/PasswordGate'
 import TabBar from '@/components/TabBar'
 import ChatWindow from '@/components/ChatWindow'
+import DocumentUploader from '@/components/DocumentUploader'
 
 const TABS = [
   { id: 'db', label: '설계 DB 반출입 관리' },
@@ -60,6 +61,7 @@ export default function Home() {
           <ChatWindow
             type="qna"
             placeholder="궁금한 점을 질문하세요..."
+            extraUI={<DocumentUploader />}
           />
         )}
       </main>
