@@ -4,6 +4,7 @@ import PasswordGate from '@/components/PasswordGate'
 import TabBar from '@/components/TabBar'
 import ChatWindow from '@/components/ChatWindow'
 import DocumentUploader from '@/components/DocumentUploader'
+import MasterFileUploader from '@/components/MasterFileUploader'
 
 const TABS = [
   { id: 'db', label: '설계 DB 반출입 관리' },
@@ -46,6 +47,7 @@ export default function Home() {
             showDownload
             downloadType="db"
             downloadLabel="DB 반출입 대장 다운로드"
+            extraUI={<MasterFileUploader type="db" />}
           />
         )}
         {activeTab === 'mail' && (
@@ -55,6 +57,7 @@ export default function Home() {
             showDownload
             downloadType="mail"
             downloadLabel="메일 반출 대장 다운로드"
+            extraUI={<MasterFileUploader type="mail" />}
           />
         )}
         {activeTab === 'qna' && (
