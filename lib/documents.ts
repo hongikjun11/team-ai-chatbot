@@ -1,6 +1,7 @@
 import mammoth from 'mammoth'
 import pdfParse from 'pdf-parse'
 import ExcelJS from 'exceljs'
+import fs from 'fs'
 
 export async function extractTextFromBuffer(buffer: Buffer, ext: string): Promise<string> {
   const e = ext.toLowerCase().replace('.', '')
@@ -17,7 +18,8 @@ export async function extractTextFromBuffer(buffer: Buffer, ext: string): Promis
 
   if (e === 'xlsx' || e === 'xls') {
     const wb = new ExcelJS.Workbook()
-    await wb.xlsx.load(buffer)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await wb.xlsx.load(buffer as any)
     const lines: string[] = []
     wb.eachSheet((ws) => {
       ws.eachRow((row) => {
@@ -36,8 +38,17 @@ export async function extractTextFromBuffer(buffer: Buffer, ext: string): Promis
 }
 
 export async function extractTextFromUrl(url: string): Promise<string> {
-  const res = await fetch(url)
-  const buffer = Buffer.from(await res.arrayBuffer())
+  let buffer: Buffer
+
+  if (url.startsWith('file://')) {
+    // 로컬 모드: file:// 경로를 직접 읽기 (Node.js fetch는 file:// 미지원)
+    const filePath = decodeURIComponent(url.replace('file://', ''))
+    buffer = fs.readFileSync(filePath) as Buffer
+  } else {
+    const res = await fetch(url)
+    buffer = Buffer.from(await res.arrayBuffer()) as Buffer
+  }
+
   const ext = url.split('.').pop() ?? 'txt'
   return extractTextFromBuffer(buffer, ext)
 }

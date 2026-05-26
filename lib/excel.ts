@@ -46,12 +46,13 @@ export function appendRowToSheet(
 
 export async function serializeWorkbook(wb: ExcelJS.Workbook): Promise<Buffer> {
   const arrayBuffer = await wb.xlsx.writeBuffer()
-  return Buffer.from(arrayBuffer)
+  return Buffer.from(arrayBuffer) as Buffer
 }
 
 export async function loadWorkbookFromBuffer(buffer: Buffer): Promise<ExcelJS.Workbook> {
   const wb = new ExcelJS.Workbook()
-  await wb.xlsx.load(buffer)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await wb.xlsx.load(buffer as any)
   return wb
 }
 

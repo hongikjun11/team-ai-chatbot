@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 로컬 테스트용 파일 저장소 (Vercel Blob 대체)
+/local-data

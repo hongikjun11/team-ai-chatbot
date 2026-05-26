@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import MessageBubble from './MessageBubble'
 import FileDownloadButton from './FileDownloadButton'
+import InstructionsModal from './InstructionsModal'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -17,6 +18,8 @@ interface Props {
   extraUI?: React.ReactNode
 }
 
+const STORAGE_KEY = (type: string) => `chat_instructions_${type}`
+
 export default function ChatWindow({
   type,
   placeholder = '메시지를 입력하세요...',
@@ -28,11 +31,25 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(false)
+  const [customInstructions, setCustomInstructions] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // localStorage에서 지침 불러오기
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY(type))
+    if (saved) setCustomInstructions(saved)
+  }, [type])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const handleSaveInstructions = (value: string) => {
+    setCustomInstructions(value)
+    localStorage.setItem(STORAGE_KEY(type), value)
+    setShowInstructions(false)
+  }
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return
@@ -46,14 +63,30 @@ export default function ChatWindow({
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, messages: [...messages, userMessage] }),
+        body: JSON.stringify({
+          type,
+          messages: [...messages, userMessage],
+          customInstructions: customInstructions || undefined,
+        }),
       })
+
       const data = await res.json()
+
+      if (!res.ok) {
+        const errMsg = data?.error || `서버 오류 (${res.status})`
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: `⚠️ ${errMsg}` },
+        ])
+        return
+      }
+
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '알 수 없는 오류'
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: '오류가 발생했습니다. 다시 시도해주세요.' },
+        { role: 'assistant', content: `⚠️ 네트워크 오류: ${msg}` },
       ])
     } finally {
       setLoading(false)
@@ -62,14 +95,28 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] bg-white rounded-xl border border-gray-200">
-      {(showDownload || extraUI) && (
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100">
-          {showDownload && downloadType && downloadLabel && (
-            <FileDownloadButton type={downloadType} label={downloadLabel} />
+      {/* 상단 툴바 */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100">
+        {showDownload && downloadType && downloadLabel && (
+          <FileDownloadButton type={downloadType} label={downloadLabel} />
+        )}
+        {extraUI}
+        {/* 지침 설정 버튼 */}
+        <button
+          onClick={() => setShowInstructions(true)}
+          className={`ml-auto flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition ${
+            customInstructions.trim()
+              ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+              : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+          }`}
+          title="AI 지침/역할 설정"
+        >
+          ⚙️ 지침 설정
+          {customInstructions.trim() && (
+            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block ml-0.5" />
           )}
-          {extraUI}
-        </div>
-      )}
+        </button>
+      </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
@@ -106,6 +153,16 @@ export default function ChatWindow({
           전송
         </button>
       </div>
+
+      {/* 지침 설정 모달 */}
+      {showInstructions && (
+        <InstructionsModal
+          type={type}
+          initialValue={customInstructions}
+          onSave={handleSaveInstructions}
+          onClose={() => setShowInstructions(false)}
+        />
+      )}
     </div>
   )
 }
