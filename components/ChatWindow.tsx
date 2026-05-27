@@ -16,6 +16,8 @@ interface Props {
   downloadType?: 'db' | 'mail'
   downloadLabel?: string
   extraUI?: React.ReactNode
+  onAiReply?: () => void   // AI 응답 후 콜백 (엑셀 뷰어 새로고침용)
+  heightClass?: string     // 커스텀 높이 클래스
 }
 
 const STORAGE_KEY = (type: string) => `chat_instructions_${type}`
@@ -27,6 +29,8 @@ export default function ChatWindow({
   downloadType,
   downloadLabel,
   extraUI,
+  onAiReply,
+  heightClass = 'h-[calc(100vh-140px)]',
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -82,6 +86,7 @@ export default function ChatWindow({
       }
 
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
+      onAiReply?.()  // 엑셀 뷰어 새로고침 트리거
     } catch (err) {
       const msg = err instanceof Error ? err.message : '알 수 없는 오류'
       setMessages((prev) => [
@@ -94,7 +99,7 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] bg-white rounded-xl border border-gray-200">
+    <div className={`flex flex-col ${heightClass} bg-white rounded-xl border border-gray-200`}>
       {/* 상단 툴바 */}
       <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100">
         {showDownload && downloadType && downloadLabel && (

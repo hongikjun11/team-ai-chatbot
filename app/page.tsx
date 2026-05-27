@@ -5,6 +5,7 @@ import TabBar from '@/components/TabBar'
 import ChatWindow from '@/components/ChatWindow'
 import DocumentUploader from '@/components/DocumentUploader'
 import MasterFileUploader from '@/components/MasterFileUploader'
+import ExcelViewer from '@/components/ExcelViewer'
 
 const TABS = [
   { id: 'db', label: '설계 DB 반출입 관리' },
@@ -15,6 +16,8 @@ const TABS = [
 export default function Home() {
   const [role, setRole] = useState<'admin' | 'guest' | null>(null)
   const [activeTab, setActiveTab] = useState('db')
+  const [dbRefresh, setDbRefresh] = useState(0)
+  const [mailRefresh, setMailRefresh] = useState(0)
 
   const isAdmin = role === 'admin'
 
@@ -69,7 +72,8 @@ export default function Home() {
       <TabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex-1 p-4 max-w-4xl mx-auto w-full">
         {/* 탭 전환 시 언마운트하지 않고 CSS로 숨김 → 대화 기록 유지 */}
-        <div className={activeTab === 'db' ? 'block' : 'hidden'}>
+        <div className={activeTab === 'db' ? 'flex flex-col gap-3' : 'hidden'}>
+          <ExcelViewer type="db" refreshTrigger={dbRefresh} />
           <ChatWindow
             type="db"
             placeholder="반출입 정보를 입력하거나 질문하세요..."
@@ -77,9 +81,12 @@ export default function Home() {
             downloadType="db"
             downloadLabel="DB 반출입 대장 다운로드"
             extraUI={isAdmin ? <MasterFileUploader type="db" /> : undefined}
+            onAiReply={() => setDbRefresh((n) => n + 1)}
+            heightClass="h-[calc(100vh-430px)]"
           />
         </div>
-        <div className={activeTab === 'mail' ? 'block' : 'hidden'}>
+        <div className={activeTab === 'mail' ? 'flex flex-col gap-3' : 'hidden'}>
+          <ExcelViewer type="mail" refreshTrigger={mailRefresh} />
           <ChatWindow
             type="mail"
             placeholder="메일 반출 정보를 입력하거나 질문하세요..."
@@ -87,6 +94,8 @@ export default function Home() {
             downloadType="mail"
             downloadLabel="메일 반출 대장 다운로드"
             extraUI={isAdmin ? <MasterFileUploader type="mail" /> : undefined}
+            onAiReply={() => setMailRefresh((n) => n + 1)}
+            heightClass="h-[calc(100vh-430px)]"
           />
         </div>
         <div className={activeTab === 'qna' ? 'block' : 'hidden'}>
