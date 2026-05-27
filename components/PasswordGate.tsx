@@ -26,8 +26,8 @@ export default function PasswordGate({ onSuccess }: Props) {
         <div className="flex justify-center mb-5">
           <img src="/t2semi-logo.png" alt="T2SEMI" className="h-12 object-contain" />
         </div>
-        <h1 className="text-lg font-semibold text-gray-800 mb-1 text-center">
-          T2SEMI 경영기획그룹 AI 챗봇
+        <h1 className="text-lg font-semibold text-gray-800 mb-1 text-center" spellCheck={false}>
+          TPSEMI 경영기획그룹 AI 챗봇
         </h1>
         <p className="text-sm text-gray-400 mb-6 text-center">로그인하여 시작하세요</p>
 
