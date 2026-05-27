@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 interface Props {
   type: 'db' | 'mail'
-  refreshTrigger?: number  // 숫자가 바뀔 때마다 자동 새로고침
+  refreshTrigger?: number
 }
 
 export default function ExcelViewer({ type, refreshTrigger }: Props) {
@@ -29,7 +29,6 @@ export default function ExcelViewer({ type, refreshTrigger }: Props) {
     }
   }, [type])
 
-  // 마운트 시 + refreshTrigger 변경 시 새로고침
   useEffect(() => {
     fetchData()
   }, [fetchData, refreshTrigger])
@@ -38,7 +37,7 @@ export default function ExcelViewer({ type, refreshTrigger }: Props) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 flex flex-col" style={{ height: '260px' }}>
-      {/* 헤더 */}
+      {/* 상단 툴바 */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">📊 {title}</span>
@@ -62,8 +61,8 @@ export default function ExcelViewer({ type, refreshTrigger }: Props) {
         </div>
       </div>
 
-      {/* 테이블 영역 */}
-      <div className="flex-1 overflow-auto">
+      {/* 테이블 영역 - 가로/세로 스크롤 */}
+      <div className="flex-1 overflow-auto relative">
         {loading && rows.length === 0 ? (
           <div className="flex items-center justify-center h-full text-sm text-gray-400">
             불러오는 중...
@@ -73,16 +72,17 @@ export default function ExcelViewer({ type, refreshTrigger }: Props) {
             저장된 데이터가 없습니다
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse min-w-max">
-            <thead className="sticky top-0 z-10">
+          <table className="text-xs border-collapse" style={{ minWidth: 'max-content' }}>
+            <thead>
               <tr>
-                <th className="bg-gray-100 border border-gray-200 px-3 py-1.5 text-gray-600 font-semibold text-center whitespace-nowrap w-8">
+                {/* No 컬럼 - 세로/가로 틀 고정 */}
+                <th className="sticky top-0 left-0 z-30 bg-gray-100 border border-gray-300 px-3 py-1.5 text-gray-600 font-semibold text-center whitespace-nowrap" style={{ minWidth: '40px' }}>
                   No
                 </th>
                 {headers.map((h, i) => (
                   <th
                     key={i}
-                    className="bg-gray-100 border border-gray-200 px-3 py-1.5 text-gray-600 font-semibold text-center whitespace-nowrap"
+                    className="sticky top-0 z-20 bg-gray-100 border border-gray-300 px-3 py-1.5 text-gray-600 font-semibold text-center whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -95,13 +95,16 @@ export default function ExcelViewer({ type, refreshTrigger }: Props) {
                   key={ri}
                   className={ri % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50'}
                 >
-                  <td className="border border-gray-200 px-3 py-1.5 text-center text-gray-400">
+                  {/* No 컬럼 - 가로 틀 고정 */}
+                  <td className="sticky left-0 z-10 border border-gray-200 px-3 py-1.5 text-center text-gray-400 font-medium"
+                    style={{ backgroundColor: ri % 2 === 0 ? '#fff' : '#f9fafb' }}>
                     {ri + 1}
                   </td>
                   {headers.map((_, ci) => (
                     <td
                       key={ci}
-                      className="border border-gray-200 px-3 py-1.5 text-gray-700 whitespace-nowrap max-w-48 overflow-hidden text-ellipsis"
+                      className="border border-gray-200 px-3 py-1.5 text-gray-700 whitespace-nowrap"
+                      style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}
                       title={row[ci] ?? ''}
                     >
                       {row[ci] ?? ''}
