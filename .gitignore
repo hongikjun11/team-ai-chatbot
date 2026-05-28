@@ -37,3 +37,6 @@ next-env.d.ts
 
 # 로컬 테스트용 파일 저장소 (Vercel Blob 대체)
 /local-data
+
+# 로컬 실행 스크립트 (PC별 경로가 달라 커밋 불필요)
+서버시작.bat
