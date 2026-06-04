@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { listQnaDocsWithMeta } from '@/lib/blob'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const docs = await listQnaDocsWithMeta()

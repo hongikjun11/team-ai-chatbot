@@ -82,11 +82,13 @@ export default function DocumentUploader({ isAdmin = false }: Props) {
       const data = await res.json()
       if (data.ok) {
         await fetchDocs() // 업로드 후 목록 갱신
+        alert(`✅ "${data.name}" 문서가 업로드되었습니다.`)
       } else {
         alert(data.error || '업로드 실패')
       }
-    } catch {
-      alert('업로드 실패')
+    } catch (err) {
+      console.error('[DocumentUploader] 업로드 오류:', err)
+      alert('업로드 중 오류가 발생했습니다')
     } finally {
       setUploading(false)
       e.target.value = ''
