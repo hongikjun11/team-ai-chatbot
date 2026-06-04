@@ -73,7 +73,7 @@ async function blobGetMasterBuffer(target: BlobTarget): Promise<Buffer | null> {
 
 async function blobSaveMasterBuffer(target: BlobTarget, buffer: Buffer): Promise<string> {
   const { url } = await put(MASTER_KEYS[target], buffer, {
-    access: 'private',
+    access: 'public',
     addRandomSuffix: false,
   })
   return url
@@ -81,7 +81,7 @@ async function blobSaveMasterBuffer(target: BlobTarget, buffer: Buffer): Promise
 
 async function blobUploadQnaDocument(filename: string, buffer: Buffer): Promise<string> {
   const { url } = await put(`qna-docs/${filename}`, buffer, {
-    access: 'private',
+    access: 'public',
     addRandomSuffix: false,
   })
   return url
