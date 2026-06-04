@@ -1,4 +1,4 @@
-import { put, list } from '@vercel/blob'
+import { put, list, del } from '@vercel/blob'
 import path from 'path'
 import fs from 'fs'
 
@@ -150,4 +150,32 @@ export async function listQnaDocsWithMeta(): Promise<QnaDocMeta[]> {
 export async function getMasterUrl(target: BlobTarget): Promise<string | null> {
   if (isLocalMode()) return localGetMasterUrl(target)
   return blobGetMasterUrl(target)
+}
+
+export async function deleteQnaDocument(filename: string): Promise<boolean> {
+  if (isLocalMode()) {
+    const filePath = path.join(LOCAL_DATA_DIR, 'qna-docs', filename)
+    if (!fs.existsSync(filePath)) return false
+    fs.unlinkSync(filePath)
+    return true
+  }
+  // Vercel Blob
+  const { blobs } = await list({ prefix: `qna-docs/${filename}` })
+  if (blobs.length === 0) return false
+  await del(blobs.map((b) => b.url))
+  return true
+}
+
+export async function deleteMaster(target: BlobTarget): Promise<boolean> {
+  if (isLocalMode()) {
+    const filePath = path.join(LOCAL_DATA_DIR, MASTER_KEYS[target])
+    if (!fs.existsSync(filePath)) return false
+    fs.unlinkSync(filePath)
+    return true
+  }
+  // Vercel Blob: URL 조회 후 삭제
+  const { blobs } = await list({ prefix: MASTER_KEYS[target] })
+  if (blobs.length === 0) return false
+  await del(blobs.map((b) => b.url))
+  return true
 }

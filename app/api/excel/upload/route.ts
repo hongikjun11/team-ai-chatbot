@@ -21,13 +21,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Excel 파일(.xlsx)만 업로드 가능합니다' }, { status: 400 })
     }
 
-    // Blob 토큰 확인 (디버그용)
-    const token = process.env.BLOB_READ_WRITE_TOKEN
-    if (!token || token === 'your_blob_token_here') {
-      console.error('[upload] BLOB_READ_WRITE_TOKEN이 설정되지 않음')
-      return NextResponse.json({ error: 'Blob 토큰이 설정되지 않았습니다. Vercel 환경변수를 확인하세요.' }, { status: 500 })
-    }
-
     const buffer = Buffer.from(await file.arrayBuffer())
     console.log(`[upload] type=${type} size=${buffer.length} bytes`)
 
