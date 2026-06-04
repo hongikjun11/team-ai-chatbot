@@ -9,10 +9,18 @@ const MASTER_KEYS: Record<BlobTarget, string> = {
   mail: 'mail-master.xlsx',
 }
 
-/** BLOB_READ_WRITE_TOKEN이 없거나 플레이스홀더면 로컬 파일 모드 */
+/** Vercel Blob 연결 여부 확인 (토큰 방식 또는 OIDC 방식 모두 지원) */
 function isLocalMode(): boolean {
   const token = process.env.BLOB_READ_WRITE_TOKEN
-  return !token || token === 'your_blob_token_here'
+  const storeId = process.env.BLOB_STORE_ID
+  // OIDC 방식(BLOB_STORE_ID) 또는 토큰 방식(BLOB_READ_WRITE_TOKEN) 중 하나라도 있으면 Blob 모드
+  const hasBlobConfig =
+    (token && token !== 'your_blob_token_here') || !!storeId
+  // Vercel 환경에서 Blob 설정이 없으면 로컬 파일 접근 불가 → 명확한 에러
+  if (!hasBlobConfig && process.env.VERCEL) {
+    throw new Error('Blob 스토어가 설정되지 않았습니다. Vercel Storage에서 Blob 스토어를 프로젝트에 연결하세요.')
+  }
+  return !hasBlobConfig
 }
 
 const LOCAL_DATA_DIR = path.join(process.cwd(), 'local-data')
