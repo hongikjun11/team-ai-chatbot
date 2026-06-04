@@ -9,18 +9,23 @@ const MASTER_KEYS: Record<BlobTarget, string> = {
   mail: 'mail-master.xlsx',
 }
 
-/** Vercel Blob 연결 여부 확인 (토큰 방식 또는 OIDC 방식 모두 지원) */
-function isLocalMode(): boolean {
+/**
+ * 실제 사용할 Blob 토큰 반환
+ * 우선순위: BLOB_READ_WRITE_TOKEN(OIDC 자동 주입 or Preview 수동) → BLOB_TOKEN(Production 수동)
+ */
+function getBlobToken(): string | undefined {
   const token = process.env.BLOB_READ_WRITE_TOKEN
-  const storeId = process.env.BLOB_STORE_ID
-  // OIDC 방식(BLOB_STORE_ID) 또는 토큰 방식(BLOB_READ_WRITE_TOKEN) 중 하나라도 있으면 Blob 모드
-  const hasBlobConfig =
-    (token && token !== 'your_blob_token_here') || !!storeId
-  // Vercel 환경에서 Blob 설정이 없으면 로컬 파일 접근 불가 → 명확한 에러
-  if (!hasBlobConfig && process.env.VERCEL) {
-    throw new Error('Blob 스토어가 설정되지 않았습니다. Vercel Storage에서 Blob 스토어를 프로젝트에 연결하세요.')
+  if (token && token !== 'your_blob_token_here') return token
+  return process.env.BLOB_TOKEN // Production 수동 등록용 커스텀 변수
+}
+
+/** Vercel Blob 사용 가능 여부 확인 */
+function isLocalMode(): boolean {
+  const hasToken = !!getBlobToken()
+  if (!hasToken && process.env.VERCEL) {
+    throw new Error('Blob 토큰이 설정되지 않았습니다. BLOB_READ_WRITE_TOKEN 또는 BLOB_TOKEN 환경변수를 Vercel에 추가하세요.')
   }
-  return !hasBlobConfig
+  return !hasToken
 }
 
 const LOCAL_DATA_DIR = path.join(process.cwd(), 'local-data')
@@ -73,35 +78,42 @@ function localGetMasterUrl(target: BlobTarget): string | null {
 // ─────────────────────────────────────────────
 
 async function blobGetMasterBuffer(target: BlobTarget): Promise<Buffer | null> {
-  const { blobs } = await list({ prefix: MASTER_KEYS[target] })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: MASTER_KEYS[target], token })
   if (blobs.length === 0) return null
   const res = await fetch(blobs[0].url)
   return Buffer.from(await res.arrayBuffer()) as Buffer
 }
 
 async function blobSaveMasterBuffer(target: BlobTarget, buffer: Buffer): Promise<string> {
+  const token = getBlobToken()
   const { url } = await put(MASTER_KEYS[target], buffer, {
     access: 'public',
     addRandomSuffix: false,
+    token,
   })
   return url
 }
 
 async function blobUploadQnaDocument(filename: string, buffer: Buffer): Promise<string> {
+  const token = getBlobToken()
   const { url } = await put(`qna-docs/${filename}`, buffer, {
     access: 'public',
     addRandomSuffix: false,
+    token,
   })
   return url
 }
 
 async function blobListQnaDocs(): Promise<string[]> {
-  const { blobs } = await list({ prefix: 'qna-docs/' })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: 'qna-docs/', token })
   return blobs.map((b) => b.url)
 }
 
 async function blobGetMasterUrl(target: BlobTarget): Promise<string | null> {
-  const { blobs } = await list({ prefix: MASTER_KEYS[target] })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: MASTER_KEYS[target], token })
   if (blobs.length === 0) return null
   return blobs[0].url
 }
@@ -147,7 +159,8 @@ export async function listQnaDocsWithMeta(): Promise<QnaDocMeta[]> {
     }))
   }
   // Blob 모드: public URL을 읽기 + 다운로드 모두 사용
-  const { blobs } = await list({ prefix: 'qna-docs/' })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: 'qna-docs/', token })
   return blobs.map((b) => ({
     name: b.pathname.replace('qna-docs/', ''),
     readUrl: b.url,
@@ -168,9 +181,10 @@ export async function deleteQnaDocument(filename: string): Promise<boolean> {
     return true
   }
   // Vercel Blob
-  const { blobs } = await list({ prefix: `qna-docs/${filename}` })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: `qna-docs/${filename}`, token })
   if (blobs.length === 0) return false
-  await del(blobs.map((b) => b.url))
+  await del(blobs.map((b) => b.url), { token })
   return true
 }
 
@@ -182,8 +196,9 @@ export async function deleteMaster(target: BlobTarget): Promise<boolean> {
     return true
   }
   // Vercel Blob: URL 조회 후 삭제
-  const { blobs } = await list({ prefix: MASTER_KEYS[target] })
+  const token = getBlobToken()
+  const { blobs } = await list({ prefix: MASTER_KEYS[target], token })
   if (blobs.length === 0) return false
-  await del(blobs.map((b) => b.url))
+  await del(blobs.map((b) => b.url), { token })
   return true
 }
